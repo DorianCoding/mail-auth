@@ -24,7 +24,7 @@ pub struct DomainKey {
 }
 pub trait Domain{
     fn intodomain(a: Cow<str>) -> Self;
-    fn cutdomain(&self) -> Cow<str>;
+    fn cutdomain(&'_ self) -> Cow<'_, str>;
 }
 impl<'a> Domain for Cow<'a, str> {
     fn intodomain(a: Cow<str>) -> Self {
@@ -35,7 +35,7 @@ impl<'a> Domain for Cow<'a, str> {
         }
     }
     //Check up domain and not full name to avoid issues when mail are delivered
-    fn cutdomain(&self) -> Cow<str> {
+    fn cutdomain(&'_ self) -> Cow<'_, str> {
         match self.split(".").count() {
             1 | 2 => Cow::Borrowed(self),
             0 => unreachable!(),
@@ -67,7 +67,7 @@ impl MessageAuthenticator {
                 for host in ptr
                     .iter()
                     .filter(|p| {
-                        p.cutdomain() == domain.cutdomain()
+                        Cow::Borrowed(p.as_str()).cutdomain() == domain.cutdomain()
                     })
                     .take(2)
                 {
