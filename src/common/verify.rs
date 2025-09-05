@@ -25,11 +25,13 @@ pub struct DomainKey {
 }
 
 impl MessageAuthenticator {
-    pub async fn verify_iprev<'x, TXT, MXX, IPV4, IPV6, PTR>(
+    pub async fn verify_iprev<'x, T, TXT, MXX, IPV4, IPV6, PTR>(
         &self,
+        domain: T,
         params: impl Into<Parameters<'x, IpAddr, TXT, MXX, IPV4, IPV6, PTR>>,
     ) -> IprevOutput
     where
+        T: AsRef<str>,
         TXT: ResolverCache<String, Txt> + 'x,
         MXX: ResolverCache<String, Arc<Vec<MX>>> + 'x,
         IPV4: ResolverCache<String, Arc<Vec<Ipv4Addr>>> + 'x,
@@ -37,10 +39,24 @@ impl MessageAuthenticator {
         PTR: ResolverCache<IpAddr, Arc<Vec<String>>> + 'x,
     {
         let params = params.into();
+        let domain = domain
+            .as_ref()
+            .trim_end_matches(".")
+            .split_once(".")
+            .and_then(|f| Some(f.1))
+            .unwrap_or(domain.as_ref());
         match self.ptr_lookup(params.params, params.cache_ptr).await {
             Ok(ptr) => {
                 let mut last_err = None;
-                for host in ptr.iter().take(2) {
+                for host in ptr
+                    .iter()
+                    .filter(|p| {
+                        p.trim_end_matches(".")
+                            .split_once(".")
+                            .is_some_and(|f| f.1 == domain)
+                    })
+                    .take(2)
+                {
                     match &params.params {
                         IpAddr::V4(ip) => match self.ipv4_lookup(host, params.cache_ipv4).await {
                             Ok(ips) => {
@@ -80,10 +96,13 @@ impl MessageAuthenticator {
                     ptr: ptr.into(),
                 }
             }
-            Err(err) => IprevOutput {
-                result: err.into(),
-                ptr: None,
-            },
+            Err(err) => {
+                println!("No infos for {:?}", params.params);
+                IprevOutput {
+                    result: err.into(),
+                    ptr: None,
+                }
+            }
         }
     }
 }
