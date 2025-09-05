@@ -23,7 +23,29 @@ pub struct DomainKey {
     pub p: Box<dyn VerifyingKey + Send + Sync>,
     pub f: u64,
 }
-
+pub trait Domain{
+    fn intodomain(a: String) -> Self;
+    fn cutdomain(&self) -> String;
+}
+impl Domain for String {
+    fn intodomain(a: String) -> Self {
+        let a = a.trim().to_string();
+        match a.ends_with(".") {
+            true => a,
+            false => format!("{a}.")
+        }
+    }
+    //Check up domain and not full name to avoid issues when mail are delivered
+    fn cutdomain(&self) -> String {
+        match self.split(".").count() {
+            1 | 2 => self.clone(),
+            0 => unreachable!(),
+            _ => {
+                self.splitn(2, '.').last().unwrap().to_string()
+            }
+        }
+    }
+}
 impl MessageAuthenticator {
     pub async fn verify_iprev<'x, T, TXT, MXX, IPV4, IPV6, PTR>(
         &self,
@@ -31,7 +53,7 @@ impl MessageAuthenticator {
         params: impl Into<Parameters<'x, IpAddr, TXT, MXX, IPV4, IPV6, PTR>>,
     ) -> IprevOutput
     where
-        T: AsRef<str>,
+        T: Domain,
         TXT: ResolverCache<String, Txt> + 'x,
         MXX: ResolverCache<String, Arc<Vec<MX>>> + 'x,
         IPV4: ResolverCache<String, Arc<Vec<Ipv4Addr>>> + 'x,
@@ -39,21 +61,14 @@ impl MessageAuthenticator {
         PTR: ResolverCache<IpAddr, Arc<Vec<String>>> + 'x,
     {
         let params = params.into();
-        let domain = domain
-            .as_ref()
-            .trim_end_matches(".")
-            .split_once(".")
-            .and_then(|f| Some(f.1))
-            .unwrap_or(domain.as_ref());
+        let domain = domain.cutdomain();
         match self.ptr_lookup(params.params, params.cache_ptr).await {
             Ok(ptr) => {
                 let mut last_err = None;
                 for host in ptr
                     .iter()
                     .filter(|p| {
-                        p.trim_end_matches(".")
-                            .split_once(".")
-                            .is_some_and(|f| f.1 == domain)
+                        p.cutdomain() == domain.cutdomain()
                     })
                     .take(2)
                 {

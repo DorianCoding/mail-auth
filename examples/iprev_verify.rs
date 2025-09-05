@@ -16,7 +16,7 @@
         let params = Parameters::new(IpAddr::from_str("1.1.1.1").unwrap());
         assert_eq!(
             resolver
-                .verify_iprev("one.one.one.one.", params)
+                .verify_iprev("one.one.one.one.".to_string(), params)
                 .await,
             IprevOutput {
                 ptr: Some(arc),
@@ -30,7 +30,7 @@
         let params = Parameters::new(IpAddr::from_str("54.215.62.21").unwrap());
         assert_eq!(
             resolver
-                .verify_iprev("ec2-54-215-62-21.us-west-1.compute.amazonaws.com.", params)
+                .verify_iprev("ec2-54-215-62-21.us-west-1.compute.amazonaws.com.".to_string(), params)
                 .await,
             IprevOutput {
                 ptr: Some(arc),
