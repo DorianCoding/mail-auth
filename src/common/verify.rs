@@ -23,20 +23,17 @@ pub struct DomainKey {
     pub f: u64,
 }
 pub trait Domain{
-    fn intodomain(a: Cow<str>) -> Self;
     fn cutdomain(&'_ self) -> Cow<'_, str>;
 }
 impl<'a> Domain for Cow<'a, str> {
-    fn intodomain(a: Cow<str>) -> Self {
-        let a = a.trim();
-        match a.ends_with(".") {
-            true => Cow::Owned(a.to_string()),
-            false => Cow::Owned(format!("{a}."))
-        }
-    }
     //Check up domain and not full name to avoid issues when mail are delivered
     fn cutdomain(&'_ self) -> Cow<'_, str> {
-        match self.split(".").count() {
+        let a = self.trim();
+        let a = match a.ends_with(".") {
+            true => Cow::Owned::<String>(a.to_string()),
+            false => Cow::Owned(format!("{a}."))
+        };
+        match a.split(".").count() {
             1 | 2 => Cow::Borrowed(self),
             0 => unreachable!(),
             _ => {
@@ -60,7 +57,6 @@ impl MessageAuthenticator {
         PTR: ResolverCache<IpAddr, Arc<Vec<String>>> + 'x,
     {
         let params = params.into();
-        let domain = domain.cutdomain();
         match self.ptr_lookup(params.params, params.cache_ptr).await {
             Ok(ptr) => {
                 let mut last_err = None;

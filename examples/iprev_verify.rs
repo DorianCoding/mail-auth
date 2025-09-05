@@ -1,7 +1,5 @@
     use std::{
-        net::IpAddr,
-        str::FromStr,
-        sync::Arc,
+        borrow::Cow, net::IpAddr, str::FromStr, sync::Arc
     };
 
     use mail_auth::{IprevOutput, MessageAuthenticator, Parameters,IprevResult};
@@ -16,7 +14,7 @@
         let params = Parameters::new(IpAddr::from_str("1.1.1.1").unwrap());
         assert_eq!(
             resolver
-                .verify_iprev("one.one.one.one.".to_string(), params)
+                .verify_iprev(Cow::Borrowed("one.one.one.one."), params)
                 .await,
             IprevOutput {
                 ptr: Some(arc),
@@ -30,7 +28,7 @@
         let params = Parameters::new(IpAddr::from_str("54.215.62.21").unwrap());
         assert_eq!(
             resolver
-                .verify_iprev("ec2-54-215-62-21.us-west-1.compute.amazonaws.com.".to_string(), params)
+                .verify_iprev(Cow::Borrowed("ec2-54-215-62-21.us-west-1.compute.amazonaws.com."), params)
                 .await,
             IprevOutput {
                 ptr: Some(arc),
