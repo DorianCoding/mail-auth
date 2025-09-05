@@ -5,8 +5,7 @@
  */
 
 use std::{
-    net::{IpAddr, Ipv4Addr, Ipv6Addr},
-    sync::Arc,
+    borrow::Cow, net::{IpAddr, Ipv4Addr, Ipv6Addr}, sync::Arc
 };
 
 use crate::{
@@ -24,24 +23,24 @@ pub struct DomainKey {
     pub f: u64,
 }
 pub trait Domain{
-    fn intodomain(a: String) -> Self;
-    fn cutdomain(&self) -> String;
+    fn intodomain(a: Cow<str>) -> Self;
+    fn cutdomain(&self) -> Cow<str>;
 }
-impl Domain for String {
-    fn intodomain(a: String) -> Self {
-        let a = a.trim().to_string();
+impl<'a> Domain for Cow<'a, str> {
+    fn intodomain(a: Cow<str>) -> Self {
+        let a = a.trim();
         match a.ends_with(".") {
-            true => a,
-            false => format!("{a}.")
+            true => Cow::Owned(a.to_string()),
+            false => Cow::Owned(format!("{a}."))
         }
     }
     //Check up domain and not full name to avoid issues when mail are delivered
-    fn cutdomain(&self) -> String {
+    fn cutdomain(&self) -> Cow<str> {
         match self.split(".").count() {
-            1 | 2 => self.clone(),
+            1 | 2 => Cow::Borrowed(self),
             0 => unreachable!(),
             _ => {
-                self.splitn(2, '.').last().unwrap().to_string()
+                Cow::Borrowed(self.splitn(2, '.').last().unwrap())
             }
         }
     }
