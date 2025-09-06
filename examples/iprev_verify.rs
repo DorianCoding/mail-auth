@@ -2,7 +2,7 @@
         borrow::Cow, net::IpAddr, str::FromStr, sync::Arc
     };
 
-    use mail_auth::{IprevOutput, MessageAuthenticator, Parameters,IprevResult};
+    use mail_auth::{IprevOutput, IprevResult, MessageAuthenticator, Parameters};
     #[tokio::main]
     async fn main() {
         check_iprev_direct().await;
@@ -14,7 +14,7 @@
         let params = Parameters::new(IpAddr::from_str("1.1.1.1").unwrap());
         assert_eq!(
             resolver
-                .verify_iprev(Cow::Borrowed("one.one.one.one."), params)
+                .verify_iprev(Cow::Borrowed(arc.first().unwrap().as_str()), params)
                 .await,
             IprevOutput {
                 ptr: Some(arc),
@@ -28,7 +28,7 @@
         let params = Parameters::new(IpAddr::from_str("54.215.62.21").unwrap());
         assert_eq!(
             resolver
-                .verify_iprev(Cow::Borrowed("ec2-54-215-62-21.us-west-1.compute.amazonaws.com."), params)
+                .verify_iprev(Cow::Borrowed("ec2-54-215-62-21.us-west-1.compute.amazonaws.com"), params)
                 .await,
             IprevOutput {
                 ptr: Some(arc),

@@ -23,21 +23,21 @@ pub struct DomainKey {
     pub f: u64,
 }
 pub trait Domain{
-    fn cutdomain(&'_ self) -> Cow<'_, str>;
+    fn cutdomain(&'_ self) -> Cow<'_, String>;
 }
 impl<'a> Domain for Cow<'a, str> {
     //Check up domain and not full name to avoid issues when mail are delivered
-    fn cutdomain(&'_ self) -> Cow<'_, str> {
+    fn cutdomain(&'_ self) -> Cow<'_, String> {
         let a = self.trim();
         let a = match a.ends_with(".") {
             true => Cow::Owned::<String>(a.to_string()),
             false => Cow::Owned(format!("{a}."))
         };
         match a.split(".").count() {
-            1 | 2 => Cow::Borrowed(self),
+            1 | 2 => a,
             0 => unreachable!(),
             _ => {
-                Cow::Borrowed(self.splitn(2, '.').last().unwrap())
+                Cow::Owned::<String>(a.splitn(2, '.').last().unwrap().to_string())
             }
         }
     }
